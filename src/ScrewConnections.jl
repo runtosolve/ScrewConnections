@@ -3,27 +3,28 @@ module ScrewConnections
 using Interpolations
 using CSV, DataFrames
 
-export cfs_rot_screwfastened_k, cfs_trans_screwfastened_k, cfs_pull_through_plate_stiffness, cfs_load_deformation_interpolation_model
+export rotational_stiffness, cfs_trans_screwfastened_k, cfs_pull_through_plate_stiffness, cfs_load_deformation_interpolation_model
+
 
 #Cold-formed steel
 #Rotational stiffness for a screw-fastened connection
 #Distributed spring!
 #https://doi.org/10.1016/j.tws.2012.06.005
-function cfs_rot_screwfastened_k(b, c, S, t, kp, E, CorZ)
+function rotational_stiffness(b, c, S, t, k_p, E, shape)
 
     I = 1/12*S*t^3
 
-    if CorZ == 0   #C
+    kϕp = (c^2*k_p)/S
 
-        kϕ = (S/(c^2*kp)+(((b^2*c/2)+c^2*b+(c^3/3))*S/(c^2*E*I)))^-1
-
-    elseif CorZ == 1  #Z
-
-        kϕ = (S/(c^2*kp) + c*S/(3*E*I))^-1
-
+    if shape == "C"   #C
+        kϕf = ((c^2*E*I) / (((b^2*c/2)+c^2*b+(c^3/3)))*S)
+    elseif shape == "Z"  #Z
+        kϕf = 3*E*I/(c*S)
     end
 
-    return kϕ
+    kϕ = (1/kϕp + 1/kϕf)^-1
+
+    return kϕ, I, kϕp, kϕf
 
 end
 
