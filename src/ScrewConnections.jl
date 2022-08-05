@@ -1,10 +1,18 @@
 module ScrewConnections
 
-using Interpolations
-using CSV, DataFrames
+using Interpolations, CSV, DataFrames, Parameters
 
-export rotational_stiffness, cfs_trans_screwfastened_k, cfs_pull_through_plate_stiffness, cfs_load_deformation_interpolation_model
 
+export rotational_stiffness, RotationalStiffness, cfs_trans_screwfastened_k, cfs_pull_through_plate_stiffness, cfs_load_deformation_interpolation_model
+
+@with_kw struct RotationalStiffness
+
+    I::Float64
+    kϕp::Float64
+    kϕf::Float64
+    kϕ::Float64
+
+end
 
 #Cold-formed steel
 #Rotational stiffness for a screw-fastened connection
@@ -14,17 +22,19 @@ function rotational_stiffness(b, c, S, t, k_p, E, shape)
 
     I = 1/12*S*t^3
 
-    kϕp = (c^2*k_p)/S
+    kϕ_p = (c^2*k_p)/S
 
     if shape == "C"   #C
-        kϕf = ((c^2*E*I) / (((b^2*c/2)+c^2*b+(c^3/3)))*S)
+        kϕ_f = (c^2*E*I) / S / ((b^2*c/2)+c^2*b+(c^3/3))
     elseif shape == "Z"  #Z
-        kϕf = 3*E*I/(c*S)
+        kϕ_f = 3*E*I/(c*S)
     end
 
-    kϕ = (1/kϕp + 1/kϕf)^-1
+    kϕ = (1/kϕ_p + 1/kϕ_f)^-1
 
-    return kϕ, I, kϕp, kϕf
+    model = RotationalStiffness(I, kϕ_p, kϕ_f, kϕ)
+
+    return model
 
 end
 
