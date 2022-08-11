@@ -3,7 +3,7 @@ module ScrewConnections
 using Interpolations, CSV, DataFrames, Parameters
 
 
-export rotational_stiffness, RotationalStiffness, cfs_trans_screwfastened_k, cfs_pull_through_plate_stiffness, cfs_load_deformation_interpolation_model
+export rotational_stiffness, RotationalStiffness, shear_stiffness, ShearStiffness, cfs_pull_through_plate_stiffness, cfs_load_deformation_interpolation_model
 
 @with_kw struct RotationalStiffness
 
@@ -11,6 +11,16 @@ export rotational_stiffness, RotationalStiffness, cfs_trans_screwfastened_k, cfs
     kϕp::Float64
     kϕf::Float64
     kϕ::Float64
+
+end
+
+@with_kw struct ShearStiffness
+
+    Ka::Float64
+    ψ::Float64
+    α::Float64
+    β::Float64
+    Ke::Float64
 
 end
 
@@ -43,19 +53,21 @@ end
 #Translational stiffness for a screw-fastened connection
 #Discrete spring!
 #https://www.buildusingsteel.org/aisi-design-resources/-/media/doc/buildusingsteel/research-reports/CFSD%20-%20Report%20-%20RP17-2.pdf
-function cfs_trans_screwfastened_k(t1, t2, E1, E2, Fss, Fu1, Fu2, D)
+function shear_stiffness(t1, t2, E1, E2, Fss, Fu1, Fu2, D, α, β)
 
     Ka = (1/(E1*t1)+1/(E2*t2))^-1
 
     ψ=(Fss/(t1*D*Fu1))*(Fss/(t2*D*Fu2))
 
     #monotonic elastic, steel to steel
-    α = 0.27
-    β = - 0.69
+    # α = 0.27
+    # β = - 0.69
 
     Ke = α*ψ^β*Ka
 
-    return Ka, ψ, α, β, Ke
+    model = ShearStiffness(Ka, ψ, α, β, Ke)
+
+    return model
 
 end
 
